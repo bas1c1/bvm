@@ -1,41 +1,57 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdint.h>
 
-#define SIZEOFARRAY(array) sizeof(array)/sizeof(array[0])
+//#define RAM_SIZE 32768
 
 //unsigned char table[] = [
 //0x1b /*NOP command*/,
 //0x5a /*PUSH command*/,
-//0x5b /*POP command*/,
-//0xad /*ADD command*/
+//0x5b /*POP command*/
 //];
-int SIZE = 0;
-int *stack;
 
-int uchtint(unsigned char ch) {
-	return (int)ch;
+int SIZE = 0;
+int SIZEVIDMEM = 0;
+unsigned char *stack;
+//uint16_t RAM[RAM_SIZE];
+
+void array_copy(int * dst, const int * src, size_t size) {
+    while ( size-- )
+        *dst++ = *src++;
 }
 
-void push(int element) {
+void push(unsigned char element) {
 	int *temp = (int*)malloc(SIZE+1);
-	for (int i = 0; i < SIZE; i++) {
-		temp[i] = stack[i];
-	}
+	array_copy(temp, stack, SIZE);
+	
 	SIZE++;
 	stack = temp;
 	stack[SIZE-1] = element;
+}
+
+void pop() {
+	int *temp = (int*)malloc(SIZE-1);
+	array_copy(temp, stack, SIZE-1);
+	SIZE--;
+	stack = temp;
 }
 
 int* checkCodes(unsigned char *codes, int len) {
 	for (int i = 0; i < len; i++) {
 		if (codes[i] == 0x1b) {}
 		else if(codes[i] == 0x5a) {
-			push(uchtint(codes[i+1]));
-			i++;
+			push(codes[i+1]);
+			i += 1;
 			continue;
 		}
+		else if(codes[i] == 0x5b) {
+			pop();
+			continue;
+		}
+
 	}
+	
 	return stack;
 }
 
@@ -54,10 +70,6 @@ void main(int argc, char const *argv[]) {
     	codes[i] = c;
     }
     close(fd);
-
    	checkCodes(codes, d);
-    for (int i = 0; i < SIZE; i++) {
-    	printf("%d\n", stack[i]);
-    }
     return 0;
 }
