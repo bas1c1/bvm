@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <stdint.h>
+//#include <unistd.h>
+//#include <stdint.h>
 
 typedef struct label
 {
@@ -282,22 +282,33 @@ int* checkCodes(unsigned char *codes) {
 	return stack;
 }
 
+int getFileSize(const char* file_name){
+	int _file_size = 0;
+	FILE* fd = fopen(file_name, "rb");
+	if(fd == NULL){
+		_file_size = -1;
+	}
+	else{
+		while(getc(fd) != EOF)
+			_file_size++;
+		fclose(fd);
+	}
+	return _file_size;
+}
+
 void main(int argc, char const *argv[]) {
 	int fd;
-	int d;
+	CODESSIZE = getFileSize(argv[1]);
     unsigned char c;
     unsigned char *codes;
-
-    sscanf(argv[2], "%d", &d);
-    codes = (unsigned char*)malloc(d);
+    codes = (unsigned char*)malloc(CODESSIZE);
 
     fd = open(argv[1], O_RDONLY);
-    for (int i = 0; i < d; i++) {
+    for (int i = 0; i < CODESSIZE; i++) {
     	read(fd, &c, sizeof(c));
     	codes[i] = c;
     }
     close(fd);
-    CODESSIZE = d;
    	checkCodes(codes);
     return 0;
 }
