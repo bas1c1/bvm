@@ -212,8 +212,8 @@ void call(unsigned char addr) {
 
 int* checkCodes(unsigned char *codes) {
 	for (; POINTER < CODESSIZE; POINTER++) {
-		//if (codes[POINTER] == 0xff) {continue;}
-		if(codes[POINTER] == PUSH) {
+		if (codes[POINTER] == 0xff) {continue;}
+		else if(codes[POINTER] == PUSH) {
 			push(codes[POINTER+1]);
 			POINTER += 1;
 		}
