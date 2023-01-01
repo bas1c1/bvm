@@ -15,6 +15,51 @@ int CODESSIZE = 0;
 int LABELCOUNT = 0;
 int LABELSTACKCOUNT = 0;
 
+enum {
+	/* UNDEF INSTR */
+	UNDEF   = 0x1a,
+
+	/* NULL INSTR */
+	ZERO    = 0xff,
+
+	/* MAIN INSTR */
+	PUSH    = 0x0a,
+	POP     = 0x0b,
+	INC     = 0x0c,
+	DEC     = 0x0d,
+	JMP     = 0x0e,
+	LBL     = 0x0f,
+	PUSHLBL = 0x1b,
+	CALL    = 0x1c,
+
+	/* CALL INSTR */
+	PUTC    = 0xa0,
+	GETC    = 0xa1,
+	SIZEOF  = 0xa2,
+	PUTI    = 0xa3,
+	PUTUC   = 0xa4,
+
+	/* COND INSTR */
+	JE      = 0xb0,
+	JG      = 0xb1,
+	JL      = 0xb2,
+	JNE     = 0xb3,
+	JLE     = 0xb4,
+	JGE     = 0xb5,
+
+	/* BIN  INSTR */
+	ADD     = 0xc0,
+	SUB     = 0xc1,
+	MUL     = 0xc2,
+	DIV     = 0xc3,
+	MOD     = 0xc4,
+	AND     = 0xc5,
+	OR      = 0xc6,
+	XOR     = 0xc7,
+	SHR     = 0xc8,
+	SHL     = 0xc9,
+};
+
 int *stack;
 label *labelstack;
 label *labels;
@@ -87,10 +132,80 @@ void pushlbl(unsigned char *name) {
 	labelstack[LABELSTACKCOUNT-1] = lbl;
 }
 
+void cond(unsigned char addr) {
+	switch (addr) {
+		case JE:
+			if (stack[SIZE-1] == stack[SIZE-2]) jmp();
+			break;
+		case JG:
+			if (stack[SIZE-1] > stack[SIZE-2]) jmp();
+			break;
+		case JL:
+			if (stack[SIZE-1] < stack[SIZE-2]) jmp();
+			break;
+		case JNE:
+			if (stack[SIZE-1] != stack[SIZE-2]) jmp();
+			break;
+		case JLE:
+			if (stack[SIZE-1] <= stack[SIZE-2]) jmp();
+			break;
+		case JGE:
+			if (stack[SIZE-1] >= stack[SIZE-2]) jmp();
+			break;
+	}
+}
+
+void bin(unsigned char addr) {
+	switch (addr) {
+		case ADD:
+			push(stack[SIZE-1] + stack[SIZE-2]);
+			break;
+		case SUB:
+			push(stack[SIZE-1] - stack[SIZE-2]);
+			break;
+		case DIV:
+			push(stack[SIZE-1] / stack[SIZE-2]);
+			break;
+		case MUL:
+			push(stack[SIZE-1] * stack[SIZE-2]);
+			break;
+		case MOD:
+			push(stack[SIZE-1] % stack[SIZE-2]);
+			break;
+		case AND:
+			push(stack[SIZE-1] & stack[SIZE-2]);
+			break;
+		case OR:
+			push(stack[SIZE-1] | stack[SIZE-2]);
+			break;
+		case XOR:
+			push(stack[SIZE-1] ^ stack[SIZE-2]);
+			break;
+		case SHR:
+			push(stack[SIZE-1] >> stack[SIZE-2]);
+			break;
+		case SHL:
+			push(stack[SIZE-1] << stack[SIZE-2]);
+			break;
+	}
+}
+
 void call(unsigned char addr) {
 	switch (addr) {
-		case 0xa0:
+		case PUTC:
 			putchar(stack[SIZE-1]);
+			break;
+		case PUTI:
+			printf("%d", stack[SIZE-1]); 
+			break;
+		case PUTUC:
+			printf("%x", stack[SIZE-1]); 
+			break;
+		case GETC:
+			push(getchar());
+			break;
+		case SIZEOF:
+			push(sizeof stack[SIZE-1]);
 			break;
 	}
 }
@@ -98,28 +213,37 @@ void call(unsigned char addr) {
 int* checkCodes(unsigned char *codes) {
 	for (; POINTER < CODESSIZE; POINTER++) {
 		//if (codes[POINTER] == 0xff) {continue;}
-		if(codes[POINTER] == 0x0a) {
+		if(codes[POINTER] == PUSH) {
 			push(codes[POINTER+1]);
 			POINTER += 1;
 		}
-		else if(codes[POINTER] == 0x0b) {
+		else if(codes[POINTER] == POP) {
 			pop();
 		}
-		else if(codes[POINTER] == 0x0c) {
+		else if(codes[POINTER] == INC) {
 			inc();
 		}
-		else if(codes[POINTER] == 0x0d) {
+		else if(codes[POINTER] == DEC) {
 			dec();
 		}
-		else if(codes[POINTER] == 0x0e) {
+		else if(codes[POINTER] == JMP) {
 			jmp();
 		}
-		else if(codes[POINTER] == 0x0f) {
+		else if(codes[POINTER] == JE || codes[POINTER] == JG || codes[POINTER] == JL ||
+				codes[POINTER] == JNE || codes[POINTER] == JLE || codes[POINTER] == JGE) {
+			cond(codes[POINTER]);
+		}
+		else if(codes[POINTER] == ADD || codes[POINTER] == SUB || codes[POINTER] == MUL ||
+				codes[POINTER] == DIV || codes[POINTER] == AND || codes[POINTER] == OR  ||
+				codes[POINTER] == XOR || codes[POINTER] == SHR || codes[POINTER] == SHL) {
+			bin(codes[POINTER]);
+		}
+		else if(codes[POINTER] == LBL) {
 			int labellen = 0;
 			unsigned char *name;
-			while (codes[POINTER] != 0xff) {
+			while (codes[POINTER] != ZERO) {
 				POINTER++;
-				if (codes[POINTER] != 0xff) {
+				if (codes[POINTER] != ZERO) {
 					int *temp = (int*)malloc(labellen+1);
 					array_copy(temp, name, labellen);
 					
@@ -131,13 +255,13 @@ int* checkCodes(unsigned char *codes) {
 			lbl(name);
 			free(name);
 		}
-		else if(codes[POINTER] == 0x1b) {
+		else if(codes[POINTER] == PUSHLBL) {
 
 			int labellen = 0;
 			unsigned char *name;
-			while (codes[POINTER] != 0xff) {
+			while (codes[POINTER] != ZERO) {
 				POINTER++;
-				if (codes[POINTER] != 0xff) {
+				if (codes[POINTER] != ZERO) {
 					int *temp = (int*)malloc(labellen+1);
 					array_copy(temp, name, labellen);
 					
@@ -149,7 +273,7 @@ int* checkCodes(unsigned char *codes) {
 			pushlbl(name);
 			free(name);
 		}
-		else if(codes[POINTER] == 0x1c) {
+		else if(codes[POINTER] == CALL) {
 			call(codes[POINTER+1]);
 			POINTER += 1;
 		}
@@ -175,10 +299,5 @@ void main(int argc, char const *argv[]) {
     close(fd);
     CODESSIZE = d;
    	checkCodes(codes);
-
-   	for (int i = 0; i < SIZE; ++i)
-   	{
-   		printf("%x\n", stack[i]);
-   	}
     return 0;
 }
