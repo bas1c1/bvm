@@ -6,14 +6,14 @@
 typedef struct label
 {
 	unsigned char *name;
-	int addr;
+	unsigned long long addr;
 } label;
 
-int POINTER = 0;
-int SIZE = 0;
-int CODESSIZE = 0;
-int LABELCOUNT = 0;
-int LABELSTACKCOUNT = 0;
+unsigned long long POINTER = 0;
+unsigned long long SIZE = 0;
+unsigned long long CODESSIZE = 0;
+unsigned long long LABELCOUNT = 0;
+unsigned long long LABELSTACKCOUNT = 0;
 
 enum {
 	/* UNDEF INSTR */
@@ -81,7 +81,7 @@ void array_copy(int * dst, const int * src, size_t size) {
 }
 
 void push(unsigned char element) {
-	int *temp = (int*)malloc(SIZE+1);
+	unsigned long long *temp = (unsigned long long*)malloc(SIZE+1);
 	array_copy(temp, stack, SIZE);
 	
 	SIZE++;
@@ -90,7 +90,7 @@ void push(unsigned char element) {
 }
 
 void pop() {
-	int *temp = (int*)malloc(SIZE-1);
+	unsigned long long *temp = (unsigned long long*)malloc(SIZE-1);
 	array_copy(temp, stack, SIZE-1);
 	SIZE--;
 	stack = temp;
@@ -109,7 +109,7 @@ void jmp() {
 }
 
 void lbl(unsigned char *addres) {
-	int *temp = (int*)malloc(LABELCOUNT+1);
+	unsigned long long *temp = (unsigned long long*)malloc(LABELCOUNT+1);
 	array_copy(temp, labels, LABELCOUNT);
 	LABELCOUNT++;
 	labels = temp;
@@ -122,7 +122,7 @@ void lbl(unsigned char *addres) {
 }
 
 void pushlbl(unsigned char *name) {
-	int *temp = (int*)malloc(LABELSTACKCOUNT+1);
+	unsigned long long *temp = (unsigned long long*)malloc(LABELSTACKCOUNT+1);
 	array_copy(temp, labelstack, LABELSTACKCOUNT);
 	LABELSTACKCOUNT++;
 	labelstack = temp;
@@ -244,7 +244,7 @@ int* checkCodes(unsigned char *codes) {
 			while (codes[POINTER] != ZERO) {
 				POINTER++;
 				if (codes[POINTER] != ZERO) {
-					int *temp = (int*)malloc(labellen+1);
+					unsigned long long *temp = (unsigned long long*)malloc(labellen+1);
 					array_copy(temp, name, labellen);
 					
 					labellen++;
@@ -262,7 +262,7 @@ int* checkCodes(unsigned char *codes) {
 			while (codes[POINTER] != ZERO) {
 				POINTER++;
 				if (codes[POINTER] != ZERO) {
-					int *temp = (int*)malloc(labellen+1);
+					unsigned long long *temp = (unsigned long long*)malloc(labellen+1);
 					array_copy(temp, name, labellen);
 					
 					labellen++;
@@ -282,8 +282,8 @@ int* checkCodes(unsigned char *codes) {
 	return stack;
 }
 
-int getFileSize(const char* file_name){
-	int _file_size = 0;
+unsigned long long getFileSize(const char* file_name){
+	unsigned long long _file_size = 0;
 	FILE* fd = fopen(file_name, "rb");
 	if(fd == NULL){
 		_file_size = -1;
@@ -301,7 +301,7 @@ void main(int argc, char const *argv[]) {
 	CODESSIZE = getFileSize(argv[1]);
     unsigned char c;
     unsigned char *codes;
-    codes = (unsigned char*)malloc(CODESSIZE);
+    codes = (unsigned long long*)malloc(CODESSIZE);
 
     fd = open(argv[1], O_RDONLY);
     for (int i = 0; i < CODESSIZE; i++) {
