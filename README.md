@@ -10,9 +10,9 @@ Example of code:
 The same in assembly:
 
 ```
-lbl 0xee
 push 1
+lbl 0xee
+pushlbl lbl //pushlbl 0xee
 call a0 //call putc
-pushlbl lbl
 jmp
 ```
