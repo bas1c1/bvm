@@ -38,6 +38,7 @@ enum {
 	SIZEOF  = 0xa2,
 	PUTI    = 0xa3,
 	PUTUC   = 0xa4,
+	ALLC    = 0xa5,
 
 	/* COND INSTR */
 	JE      = 0xb0,
@@ -207,13 +208,18 @@ void call(unsigned char addr) {
 		case SIZEOF:
 			push(sizeof stack[SIZE-1]);
 			break;
+		case ALLC:
+			for (int i = 0; i < (int)stack[SIZE-1]; i++) {
+				push(0x00);
+			}
+			break;
 	}
 }
 
 int* checkCodes(unsigned char *codes) {
 	for (; POINTER < CODESSIZE; POINTER++) {
-		if (codes[POINTER] == 0xff) {continue;}
-		else if(codes[POINTER] == PUSH) {
+		if (codes[POINTER] == ZERO) {continue;}
+		if(codes[POINTER] == PUSH) {
 			push(codes[POINTER+1]);
 			POINTER += 1;
 		}
@@ -239,37 +245,33 @@ int* checkCodes(unsigned char *codes) {
 			bin(codes[POINTER]);
 		}
 		else if(codes[POINTER] == LBL) {
-			int labellen = 0;
 			unsigned char *name;
-			while (codes[POINTER] != ZERO) {
+			POINTER++;
+			int labellen = stack[SIZE-1];
+			for (int i = 0; i < labellen; i++) {
+				unsigned char *temp = (unsigned char*)malloc(i+1);
+				array_copy(temp, name, i);
+				name = temp;
+				name[i] = codes[POINTER];
 				POINTER++;
-				if (codes[POINTER] != ZERO) {
-					unsigned long long *temp = (unsigned long long*)malloc(labellen+1);
-					array_copy(temp, name, labellen);
-					
-					labellen++;
-					name = temp;
-					name[labellen-1] = codes[POINTER];
-				}
+				
 			}
+			POINTER--;
 			lbl(name);
 			free(name);
 		}
 		else if(codes[POINTER] == PUSHLBL) {
-
-			int labellen = 0;
 			unsigned char *name;
-			while (codes[POINTER] != ZERO) {
+			POINTER++;
+			int labellen = stack[SIZE-1];
+			for (int i = 0; i < labellen; i++) {
+				unsigned char *temp = (unsigned char*)malloc(i+1);
+				array_copy(temp, name, i);
+				name = temp;
+				name[i] = codes[POINTER];
 				POINTER++;
-				if (codes[POINTER] != ZERO) {
-					unsigned long long *temp = (unsigned long long*)malloc(labellen+1);
-					array_copy(temp, name, labellen);
-					
-					labellen++;
-					name = temp;
-					name[labellen-1] = codes[POINTER];
-				}
 			}
+			POINTER--;
 			pushlbl(name);
 			free(name);
 		}
