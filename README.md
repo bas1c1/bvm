@@ -12,7 +12,7 @@ The same in assembly:
 ```
 push 1
 lbl 0xee
-pushlbl lbl //pushlbl 0xee
+pushlbl 0xee
 call a0 //call putc
 jmp
 ```
